@@ -5,7 +5,9 @@ from typing import List
 from database import models, schemas
 from database.database import get_db
 from security.security import get_current_user
-
+from typing import Optional, List
+from fastapi import BackgroundTasks
+import asyncio
 router = APIRouter()
 
 @router.post("/targets", status_code=status.HTTP_201_CREATED)
@@ -256,3 +258,50 @@ async def get_target_report(
     report_data["vulnerabilities"] = vulns
 
     return report_data
+
+
+@router.get("/targets", response_model=List[schemas.TargetResponse])
+async def get_targets(
+        skip: int = 0,
+        limit: int = 10,
+        search: Optional[str] = None,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(models.Target.pentester_id == current_user.id)
+
+    # Пошук по частині домену
+    if search:
+        stmt = stmt.filter(models.Target.domain.ilike(f"%{search}%"))
+
+    # Пагінація
+    stmt = stmt.offset(skip).limit(limit)
+    result = await db.execute(stmt)
+
+    return result.scalars().all()
+
+
+async def mock_security_scan(target_id: int):
+    # Імітація довгого процесу (наприклад, сканування Nmap)
+    await asyncio.sleep(10)
+    print(f"Scan finished for target ID: {target_id}")
+
+
+@router.post("/targets/{target_id}/scan", status_code=status.HTTP_202_ACCEPTED)
+async def start_target_scan(
+        target_id: int,
+        background_tasks: BackgroundTasks,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    target = (await db.execute(select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    ))).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    background_tasks.add_task(mock_security_scan, target_id)
+
+    return {"message": "Security scan started in the background"}
