@@ -6,3 +6,8 @@ class UserCreate(BaseModel):
     email: str
     password: str
     role: str = "player"
+
+class TargetCreate(BaseModel):
+    ip_address: str
+    domain: str
+    description: Optional[str] = None
