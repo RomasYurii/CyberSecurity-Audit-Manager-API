@@ -44,3 +44,8 @@ class TargetVulnerabilityResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TargetUpdate(BaseModel):
+    ip_address: Optional[str] = None
+    domain: Optional[str] = None
+    description: Optional[str] = None

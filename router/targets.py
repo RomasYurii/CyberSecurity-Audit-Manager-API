@@ -150,3 +150,30 @@ async def remove_vulnerability_from_target(
     await db.commit()
 
     return None
+
+
+@router.patch("/targets/{target_id}", response_model=schemas.TargetResponse)
+async def update_target(
+        target_id: int,
+        target_update: schemas.TargetUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    target = (await db.execute(stmt)).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    # Оновлюємо лише передані поля
+    update_data = target_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(target, key, value)
+
+    await db.commit()
+    await db.refresh(target)
+
+    return target
