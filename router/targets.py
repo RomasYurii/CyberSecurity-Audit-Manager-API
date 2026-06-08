@@ -68,3 +68,31 @@ async def delete_target(
     await db.commit()
 
     return None
+
+
+@router.post("/targets/{target_id}/vulnerabilities", status_code=status.HTTP_201_CREATED)
+async def add_vulnerability_to_target(
+        target_id: int,
+        data: schemas.TargetVulnerabilityCreate,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    target = (await db.execute(stmt)).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    target_vuln = models.TargetVulnerability(
+        target_id=target_id,
+        vulnerability_id=data.vulnerability_id,
+        severity=data.severity
+    )
+
+    db.add(target_vuln)
+    await db.commit()
+
+    return {"message": "Vulnerability linked successfully"}
