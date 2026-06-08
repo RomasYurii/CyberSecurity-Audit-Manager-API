@@ -96,3 +96,26 @@ async def add_vulnerability_to_target(
     await db.commit()
 
     return {"message": "Vulnerability linked successfully"}
+
+
+@router.get("/targets/{target_id}/vulnerabilities", response_model=List[schemas.TargetVulnerabilityResponse])
+async def get_target_vulnerabilities(
+        target_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    target_stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    target = (await db.execute(target_stmt)).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    stmt = select(models.TargetVulnerability).filter(
+        models.TargetVulnerability.target_id == target_id
+    )
+    result = await db.execute(stmt)
+
+    return result.scalars().all()

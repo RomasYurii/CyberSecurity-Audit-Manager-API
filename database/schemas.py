@@ -37,3 +37,10 @@ class VulnerabilityResponse(VulnerabilityCreate):
 class TargetVulnerabilityCreate(BaseModel):
     vulnerability_id: int
     severity: str
+
+class TargetVulnerabilityResponse(BaseModel):
+    vulnerability_id: int
+    severity: str
+
+    class Config:
+        from_attributes = True
