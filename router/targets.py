@@ -9,6 +9,8 @@ from typing import Optional, List
 from fastapi import BackgroundTasks
 from fastapi.responses import Response
 import asyncio
+from fastapi import Request
+from limiter import limiter
 router = APIRouter()
 
 @router.post("/targets", status_code=status.HTTP_201_CREATED)
@@ -289,7 +291,9 @@ async def mock_security_scan(target_id: int):
 
 
 @router.post("/targets/{target_id}/scan", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
 async def start_target_scan(
+        request: Request,
         target_id: int,
         background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),

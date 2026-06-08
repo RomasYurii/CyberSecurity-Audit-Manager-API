@@ -1,17 +1,10 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from database.database import engine
-from database.models import Base
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-from security.security import limiter
 from router import login, register, targets, vulnerabilities, users, statistics
-from database import models
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from limiter import limiter
 from database.database import engine, Base
-from database import models
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
