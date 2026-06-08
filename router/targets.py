@@ -119,3 +119,34 @@ async def get_target_vulnerabilities(
     result = await db.execute(stmt)
 
     return result.scalars().all()
+
+
+@router.delete("/targets/{target_id}/vulnerabilities/{vulnerability_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_vulnerability_from_target(
+        target_id: int,
+        vulnerability_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    target_stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    target = (await db.execute(target_stmt)).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    stmt = select(models.TargetVulnerability).filter(
+        models.TargetVulnerability.target_id == target_id,
+        models.TargetVulnerability.vulnerability_id == vulnerability_id
+    )
+    link = (await db.execute(stmt)).scalars().first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Vulnerability link not found")
+
+    await db.delete(link)
+    await db.commit()
+
+    return None
