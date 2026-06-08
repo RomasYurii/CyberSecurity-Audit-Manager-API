@@ -49,3 +49,12 @@ class TargetUpdate(BaseModel):
     ip_address: Optional[str] = None
     domain: Optional[str] = None
     description: Optional[str] = None
+
+class VulnerabilityUpdate(BaseModel):
+    name_en: Optional[str] = None
+    name_uk: Optional[str] = None
+    description_en: Optional[str] = None
+    description_uk: Optional[str] = None
+
+class TargetVulnerabilityUpdate(BaseModel):
+    severity: str

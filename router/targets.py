@@ -195,3 +195,31 @@ async def get_target(
         raise HTTPException(status_code=404, detail="Target not found")
 
     return target
+
+
+@router.patch("/targets/{target_id}/vulnerabilities/{vulnerability_id}",
+              response_model=schemas.TargetVulnerabilityResponse)
+async def update_target_vulnerability_severity(
+        target_id: int,
+        vulnerability_id: int,
+        data: schemas.TargetVulnerabilityUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    target = (await db.execute(select(models.Target).filter(models.Target.id == target_id,
+                                                            models.Target.pentester_id == current_user.id))).scalars().first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    link = (await db.execute(select(models.TargetVulnerability).filter(
+        models.TargetVulnerability.target_id == target_id,
+        models.TargetVulnerability.vulnerability_id == vulnerability_id
+    ))).scalars().first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Vulnerability link not found")
+
+    link.severity = data.severity
+    await db.commit()
+    await db.refresh(link)
+    return link
