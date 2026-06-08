@@ -223,3 +223,36 @@ async def update_target_vulnerability_severity(
     await db.commit()
     await db.refresh(link)
     return link
+
+
+@router.get("/targets/{target_id}/report", response_model=schemas.TargetReportResponse)
+async def get_target_report(
+        target_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    target_stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    target = (await db.execute(target_stmt)).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    stmt = select(
+        models.Vulnerability.id.label("vulnerability_id"),
+        models.Vulnerability.name_en,
+        models.TargetVulnerability.severity
+    ).join(
+        models.TargetVulnerability, models.Vulnerability.id == models.TargetVulnerability.vulnerability_id
+    ).filter(
+        models.TargetVulnerability.target_id == target_id
+    )
+
+    vulns = (await db.execute(stmt)).mappings().all()
+
+    report_data = schemas.TargetResponse.model_validate(target).model_dump()
+    report_data["vulnerabilities"] = vulns
+
+    return report_data

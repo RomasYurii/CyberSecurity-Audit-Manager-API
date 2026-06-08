@@ -58,3 +58,20 @@ class VulnerabilityUpdate(BaseModel):
 
 class TargetVulnerabilityUpdate(BaseModel):
     severity: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+
+    class Config:
+        from_attributes = True
+
+class TargetReportVuln(BaseModel):
+    vulnerability_id: int
+    name_en: Optional[str] = None
+    severity: str
+
+class TargetReportResponse(TargetResponse):
+    vulnerabilities: list[TargetReportVuln]
