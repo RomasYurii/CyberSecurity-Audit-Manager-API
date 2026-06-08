@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from typing import List
 from database import models, schemas
 from database.database import get_db
 from security.security import get_current_user
@@ -35,3 +35,14 @@ async def create_target(
     await db.refresh(new_target)
     
     return new_target
+
+
+@router.get("/targets", response_model=List[schemas.TargetResponse])
+async def get_targets(
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(models.Target.pentester_id == current_user.id)
+    result = await db.execute(stmt)
+
+    return result.scalars().all()

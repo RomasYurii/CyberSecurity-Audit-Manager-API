@@ -11,3 +11,13 @@ class TargetCreate(BaseModel):
     ip_address: str
     domain: str
     description: Optional[str] = None
+
+class TargetResponse(BaseModel):
+    id: int
+    ip_address: str
+    domain: str
+    description: Optional[str] = None
+    pentester_id: int
+
+    class Config:
+        from_attributes = True

@@ -11,12 +11,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from database.database import engine, Base
-from database import models  # !!! ОБОВ'ЯЗКОВО ІМПОРТУЄМО ВЕСЬ ФАЙЛ МОДЕЛЕЙ !!!
+from database import models
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Коли викликається create_all, SQLAlchemy дивиться у Base.metadata.
-    # Завдяки імпорту вище, там уже будуть таблиці users, targets тощо.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
