@@ -46,3 +46,25 @@ async def get_targets(
     result = await db.execute(stmt)
 
     return result.scalars().all()
+
+
+@router.delete("/targets/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_target(
+        target_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    result = await db.execute(stmt)
+    target = result.scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    await db.delete(target)
+    await db.commit()
+
+    return None
