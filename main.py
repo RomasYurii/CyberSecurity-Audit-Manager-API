@@ -5,7 +5,7 @@ from database.models import Base
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from security.security import limiter
-from router import login, register, targets
+from router import login, register, targets, vulnerabilities
 from database import models
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -27,3 +27,4 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(login.router, tags=["login"])
 app.include_router(register.router, tags=["register"])
 app.include_router(targets.router, tags=["targets"])
+app.include_router(vulnerabilities.router, tags=["vulnerabilities"])

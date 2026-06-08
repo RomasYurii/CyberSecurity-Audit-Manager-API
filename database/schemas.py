@@ -21,3 +21,15 @@ class TargetResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class VulnerabilityCreate(BaseModel):
+    name_en: str
+    name_uk: str
+    description_en: str
+    description_uk: str
+
+class VulnerabilityResponse(VulnerabilityCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
