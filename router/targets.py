@@ -177,3 +177,21 @@ async def update_target(
     await db.refresh(target)
 
     return target
+
+@router.get("/targets/{target_id}", response_model=schemas.TargetResponse)
+async def get_target(
+    target_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    stmt = select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    )
+    result = await db.execute(stmt)
+    target = result.scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    return target
