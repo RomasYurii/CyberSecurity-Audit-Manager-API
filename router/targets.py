@@ -7,6 +7,7 @@ from database.database import get_db
 from security.security import get_current_user
 from typing import Optional, List
 from fastapi import BackgroundTasks
+from fastapi.responses import Response
 import asyncio
 router = APIRouter()
 
@@ -305,3 +306,33 @@ async def start_target_scan(
     background_tasks.add_task(mock_security_scan, target_id)
 
     return {"message": "Security scan started in the background"}
+
+@router.get("/targets/{target_id}/export")
+async def export_target_csv(
+    target_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    target = (await db.execute(select(models.Target).filter(
+        models.Target.id == target_id,
+        models.Target.pentester_id == current_user.id
+    ))).scalars().first()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+
+    stmt = select(models.Vulnerability.name_en, models.TargetVulnerability.severity).join(
+        models.TargetVulnerability, models.Vulnerability.id == models.TargetVulnerability.vulnerability_id
+    ).filter(models.TargetVulnerability.target_id == target_id)
+
+    vulns = (await db.execute(stmt)).mappings().all()
+
+    csv_data = "Vulnerability,Severity\n"
+    for v in vulns:
+        csv_data += f"{v['name_en']},{v['severity']}\n"
+
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=target_{target_id}_report.csv"}
+    )
